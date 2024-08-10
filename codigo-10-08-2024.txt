@@ -1,0 +1,187 @@
+using System;
+using System.Collections.Generic;
+
+namespace RedSemanticaEjemploClase
+{
+    public class Program
+    {
+        static void Main(string[] args)
+        {
+            // Inicializar la red semántica
+            RedSemantica red = new RedSemantica();
+
+            // Crear nodos en la red semántica
+            Nodo fiebreAlta = red.CrearNodo("Fiebre Alta");
+            Nodo dolorMuscular = red.CrearNodo("Dolor Muscular");
+            Nodo dificultadRespirar = red.CrearNodo("Dificultad para Respirar");
+            Nodo gripe = red.CrearNodo("Gripe");
+            Nodo neumonia = red.CrearNodo("Neumonía");
+
+            // Crear relaciones (arcos) entre nodos
+            fiebreAlta.AgregarArco(gripe, "es síntoma de");
+            dolorMuscular.AgregarArco(gripe, "es síntoma de");
+            fiebreAlta.AgregarArco(neumonia, "es síntoma de");
+            dificultadRespirar.AgregarArco(neumonia, "es síntoma de");
+
+            // Mostrar la red semántica
+            red.MostrarRed();
+
+            // Inicializar el sistema experto con hechos ingresados por el usuario
+            SistemaExperto sistemaExperto = new SistemaExperto(red);
+
+            // Obtener hechos del usuario y procesar la red semántica
+            sistemaExperto.ObtenerHechosYEvaluar();
+        }
+    }
+
+    public class Nodo
+    {
+        public string Etiqueta { get; set; }
+        public List<Arco> Arcos { get; set; }
+
+        public Nodo(string etiqueta)
+        {
+            Etiqueta = etiqueta;
+            Arcos = new List<Arco>();
+        }
+
+        public void AgregarArco(Nodo destino, string etiquetaArco)
+        {
+            Arcos.Add(new Arco(this, destino, etiquetaArco));
+        }
+    }
+
+    public class Arco
+    {
+        public Nodo Origen { get; set; }
+        public Nodo Destino { get; set; }
+        public string Etiqueta { get; set; }
+
+        public Arco(Nodo origen, Nodo destino, string etiqueta)
+        {
+            Origen = origen;
+            Destino = destino;
+            Etiqueta = etiqueta;
+        }
+
+        public override string ToString()
+        {
+            return $"{Origen.Etiqueta} -- {Etiqueta} --> {Destino.Etiqueta}";
+        }
+    }
+
+    public class RedSemantica
+    {
+        public List<Nodo> Nodos { get; set; }
+
+        public RedSemantica()
+        {
+            Nodos = new List<Nodo>();
+        }
+
+        public Nodo CrearNodo(string etiqueta)
+        {
+            var nodo = new Nodo(etiqueta);
+            Nodos.Add(nodo);
+            return nodo;
+        }
+
+        public Nodo ObtenerNodoPorEtiqueta(string etiqueta)
+        {
+            return Nodos.Find(n => n.Etiqueta.Equals(etiqueta, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public void MostrarRed()
+        {
+            foreach (Nodo nodo in Nodos)
+            {
+                foreach (var arco in nodo.Arcos)
+                {
+                    Console.WriteLine(arco);
+                }
+            }
+        }
+    }
+
+    public class SistemaExperto
+    {
+        private RedSemantica _redSemantica;
+        private List<string> _hechos;
+        private List<string> _conclusiones;
+
+        public SistemaExperto(RedSemantica redSemantica)
+        {
+            _redSemantica = redSemantica;
+            _hechos = new List<string>();
+            _conclusiones = new List<string>();
+        }
+
+        public void ObtenerHechosYEvaluar()
+        {
+            Console.WriteLine("\nIngrese hechos sobre el paciente (por ejemplo, 'Fiebre Alta', 'Dolor Muscular', etc.).");
+
+            while (true)
+            {
+                Console.Write("Ingrese un hecho (o escriba 'evaluar' para obtener un diagnóstico): ");
+                string hecho = Console.ReadLine().Trim();
+
+                if (hecho.Equals("evaluar", StringComparison.OrdinalIgnoreCase))
+                {
+                    break;
+                }
+
+                Nodo nodoHecho = _redSemantica.ObtenerNodoPorEtiqueta(hecho);
+                if (nodoHecho != null)
+                {
+                    _hechos.Add(hecho);
+                    Console.WriteLine($"Hecho agregado: {hecho}");
+                }
+                else
+                {
+                    Console.WriteLine("El hecho ingresado no se encuentra en la red semántica.");
+                }
+            }
+
+            Evaluar();
+
+            Console.WriteLine("\nConclusiones derivadas:");
+            foreach (var conclusion in _conclusiones)
+            {
+                Console.WriteLine($"- {conclusion}");
+            }
+
+            Console.WriteLine("\n¿Desea ingresar más hechos o salir? (escriba 'continuar' o 'salir')");
+            string respuesta = Console.ReadLine().Trim();
+
+            if (respuesta.Equals("continuar", StringComparison.OrdinalIgnoreCase))
+            {
+                _hechos.Clear();
+                _conclusiones.Clear();
+                ObtenerHechosYEvaluar();
+            }
+            else
+            {
+                Console.WriteLine("Gracias por usar el sistema experto. ¡Hasta luego!");
+            }
+        }
+
+        private void Evaluar()
+        {
+            foreach (var hecho in _hechos)
+            {
+                Nodo nodoHecho = _redSemantica.ObtenerNodoPorEtiqueta(hecho);
+
+                if (nodoHecho != null)
+                {
+                    foreach (var arco in nodoHecho.Arcos)
+                    {
+                        if (!_conclusiones.Contains(arco.Destino.Etiqueta))
+                        {
+                            _conclusiones.Add(arco.Destino.Etiqueta);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

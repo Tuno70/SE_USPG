@@ -1,0 +1,53 @@
+import numpy as np
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report
+
+# Datos de ejemplo (síntomas: 1 = presente, 0 = ausente)
+X = np.array([
+    [1, 1, 0, 0],  # tos, fiebre
+    [1, 1, 1, 0],  # tos, fiebre, dolor de cabeza
+    [0, 1, 1, 1],  # fiebre, dolor de cabeza, náuseas
+    [1, 0, 0, 0],  # tos
+    [0, 0, 1, 1],  # dolor de cabeza, náuseas
+    [1, 1, 1, 1]   # tos, fiebre, dolor de cabeza, náuseas
+])
+
+# Etiquetas de ejemplo (enfermedades)
+y = np.array([
+    "gripe",
+    "migraña",
+    "infección estomacal",
+    "resfriado",
+    "migraña",
+    "infección grave"
+])
+
+# Dividir datos en conjuntos de entrenamiento y prueba
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Crear y entrenar el modelo
+modelo = DecisionTreeClassifier()
+modelo.fit(X_train, y_train)
+
+# Realizar predicciones y evaluar el modelo
+y_pred = modelo.predict(X_test)
+print("Precisión del modelo:", accuracy_score(y_test, y_pred))
+print("\nReporte de clasificación:")
+print(classification_report(y_test, y_pred))
+
+# Interfaz para usar el modelo en diagnóstico interactivo
+def diagnosticar_sintomas(modelo):
+    print("Ingrese los síntomas presentes (1 para sí, 0 para no):")
+    tos = int(input("¿Tos? (1/0): "))
+    fiebre = int(input("¿Fiebre? (1/0): "))
+    dolor_cabeza = int(input("¿Dolor de cabeza? (1/0): "))
+    nauseas = int(input("¿Náuseas? (1/0): "))
+
+    # Crear arreglo de síntomas ingresados
+    sintomas = np.array([[tos, fiebre, dolor_cabeza, nauseas]])
+    prediccion = modelo.predict(sintomas)
+    print(f"Diagnóstico sugerido: {prediccion[0]}")
+
+# Ejecutar diagnóstico interactivo
+diagnosticar_sintomas(modelo)
